@@ -1,1 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Расписание Checker</title>
+</head>
+<body>
+    <script>
+        const siteUrl = "https://phtt.ru/files/files/Расписание/";
+        let lastDetectedSchedule = null;
 
+        async function checkSchedule() {
+            try {
+                const currentDayOfWeek = new Date().getDay();
+                const dayOffset = (currentDayOfWeek === 6) ? 2 : 1;
+                const targetPath = `${new Date().toISOString().slice(8, 10)}.${new Date().toISOString().slice(5, 7)}.pdf`;
+                const fullUrl = `${siteUrl}1%20корп.%20${targetPath}`;
+
+                console.log(`Ищем файл по ссылке: ${fullUrl}`);
+
+                const response = await fetch(fullUrl);
+
+                if (response.ok) {
+                    console.log(`Найден файл: ${targetPath}`);
+
+                    if (lastDetectedSchedule !== targetPath) {
+                        console.log("Расписание изменилось.");
+
+                        // Отправить уведомление, например, через alert
+                        alert(`Новое расписание! ${targetPath}`);
+
+                        // Обновить последнее обнаруженное расписание
+                        lastDetectedSchedule = targetPath;
+                    } else {
+                        console.log("Расписание не изменилось.");
+                    }
+                } else {
+                    console.log(`Файл не найден: ${targetPath}`);
+                }
+            } catch (error) {
+                console.error(`Ошибка: ${error.message}`);
+            }
+
+            // Повторить проверку через 10 секунд
+            setTimeout(checkSchedule, 10000);
+        }
+
+        // Начать проверку при загрузке страницы
+        checkSchedule();
+    </script>
+</body>
+</html>
