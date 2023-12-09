@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML с кодом JavaScript</title>
+</head>
+<body>
+
+<!-- Ваша HTML-разметка -->
+
+<script>
+    // Переменная для отслеживания найденного расписания на текущий день
+    let isScheduleFound = false;
+
+    // Функция для отправки запроса на сервер
+    async function sendRequest() {
+        const siteUrl = "https://phtt.ru/files/files/Расписание/";
+        const telegramBotToken = "6844026859:AAG90RT47tHxeMd_lFVZIu4iNuGEK7ZvR5I";
+        const chatId = 1174683216;
+
+        try {
+            // Получение текущего дня недели
+            const currentDayOfWeek = new Date().getDay();
+
+            // Выбор прибавления к дню в зависимости от дня недели
+            const dayOffset = (currentDayOfWeek === 6) ? 2 : 1;
+
+            // Формирование динамического пути расписания
+            const targetPath = `${(new Date().getDate() + dayOffset).toString().padStart(2, '0')}.${(new Date().getMonth() + 1).toString().padStart(2, '0')}.pdf`;
+            const fullUrl = `${siteUrl}1%20корп.%20${targetPath}`;
+
+            // Вывод в консоль информации о поиске по данной ссылке
+            console.log(`Ищем файл по ссылке: ${fullUrl}`);
+
+            // Проверка наличия файла расписания по динамическому пути
+            const response = await fetch(fullUrl);
+            if (response.ok) {
+                console.log(`Найден файл: ${targetPath}`);
+
+                // Если расписание найдено, устанавливаем флаг в true
+                isScheduleFound = true;
+
+                // Отправка ссылки в Телеграм
+                await sendToTelegram(fullUrl, telegramBotToken, chatId);
+            } else {
+                console.log(`Файл не найден: ${targetPath}`);
+
+                // Если расписание не найдено и флаг был установлен, начинаем искать на следующий день
+                if (isScheduleFound) {
+                    isScheduleFound = false; // Сбрасываем флаг
+                    // Прибавляем день к текущей дате
+                    const nextDay = new Date();
+                    nextDay.setDate(nextDay.getDate() + 1);
+                    // Формируем новый динамический путь расписания
+                    const nextTargetPath = `${nextDay.getDate().toString().padStart(2, '0')}.${(nextDay.getMonth() + 1).toString().padStart(2, '0')}.pdf`;
+                    const nextFullUrl = `${siteUrl}1%20корп.%20${nextTargetPath}`;
+                    // Вывод в консоль информации о поиске на следующий день
+                    console.log(`Ищем файл на следующий день: ${nextFullUrl}`);
+                    // Вызываем функцию для следующего запроса
+                    sendRequest();
+                    return; // Выходим из текущего вызова, чтобы избежать задвоения запросов
+                }
+            }
+
+            // Пауза перед следующей проверкой (1 час)
+            await new Promise(resolve => setTimeout(resolve, 3600000));
+
+            // Вызов функции для следующего запроса
+            sendRequest();
+        } catch (error) {
+            console.error(`Ошибка: ${error.message}`);
+        }
+    }
+
+    // Функция для отправки сообщения в Телеграм
+    async function sendToTelegram(message, botToken, chatId) {
+        try {
+            // Отправка запроса на сервер Телеграм
+            await fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`);
+        } catch (error) {
+            console.error(`Ошибка при отправке в Телеграм: ${error.message}`);
+        }
+    }
+
+    // Запуск функции для первого запроса
+    sendRequest();
+</script>
+
+</body>
+</html>
